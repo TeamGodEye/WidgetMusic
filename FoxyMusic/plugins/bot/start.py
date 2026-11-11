@@ -19,7 +19,6 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 import config
 from FoxyMusic import app
-from FoxyMusic.widgets import send_music_widget, send_track_info_widget
 from FoxyMusic.misc import _boot_
 from FoxyMusic.plugins.sudo.sudoers import sudoers_list
 from FoxyMusic.utils.database import (add_served_chat, add_served_user,
@@ -154,15 +153,19 @@ async def _send_start_photo_with_effect(message: Message, photo: str, caption: s
 async def start_pm(client, message: Message, _):
     await add_served_user(message.from_user.id)
     await message.react("❤️", big=True)
+    # Private /start now opens the original Start experience inside a widget.
+    # Group /start below remains unchanged. Deep-link actions are routed separately.
+    if len(message.text.split()) == 1:
+        from FoxyMusic.widgets import send_music_widget
+        return await send_music_widget(message.chat.id, message.id, view="start")
     if len(message.text.split()) > 1:
         name = message.text.split(None, 1)[1]
         if name[0:4] == "help":
-            return await send_music_widget(
-                chat_id=message.chat.id,
-                reply_to_message_id=message.id,
-            )
+            from FoxyMusic.widgets import send_music_widget
+            return await send_music_widget(message.chat.id, message.id, view="help")
         if name[0:3] == "sud":
-            await sudoers_list(client=client, message=message, _=_)
+            from FoxyMusic.widgets import send_music_widget
+            await send_music_widget(message.chat.id, message.id, view="sudo")
             if await is_on_off(2):
                 return await app.send_message(
                     chat_id=config.LOGGER_ID,
@@ -170,28 +173,22 @@ async def start_pm(client, message: Message, _):
                 )
             return
         if name[0:3] == "inf":
+            from FoxyMusic.widgets import send_track_info_widget
             video_id = str(name).replace("info_", "", 1).strip()
             try:
-                await send_track_info_widget(
-                    chat_id=message.chat.id,
-                    video_id=video_id,
-                    reply_to_message_id=message.id,
-                )
+                return await send_track_info_widget(message.chat.id, video_id, message.id)
             except Exception as exc:
-                await message.reply_text(
-                    "Track information is unavailable right now. "
-                    f"<code>{type(exc).__name__}</code>"
+                return await message.reply_text(
+                    "Track information could not be loaded. Please try again."
                 )
-            if await is_on_off(2):
-                return await app.send_message(
-                    chat_id=config.LOGGER_ID,
-                    text=f"{message.from_user.mention} opened track information. "
-                         f"\n\n<b>User ID:</b> <code>{message.from_user.id}</code>",
-                )
+
     else:
-        await send_music_widget(
-            chat_id=message.chat.id,
-            reply_to_message_id=message.id,
+        out = private_panel(_)
+        await _send_start_photo_with_effect(
+            message=message,
+            photo=random.choice(START_IMAGES),
+            caption=_build_start_caption(message, _["start_2"]),
+            out=out,
         )
         if await is_on_off(2):
             return await app.send_message(
