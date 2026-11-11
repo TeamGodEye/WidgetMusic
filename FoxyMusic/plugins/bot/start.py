@@ -19,6 +19,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 import config
 from FoxyMusic import app
+from FoxyMusic.widgets import send_music_widget, send_track_info_widget
 from FoxyMusic.misc import _boot_
 from FoxyMusic.plugins.sudo.sudoers import sudoers_list
 from FoxyMusic.utils.database import (add_served_chat, add_served_user,
@@ -156,12 +157,9 @@ async def start_pm(client, message: Message, _):
     if len(message.text.split()) > 1:
         name = message.text.split(None, 1)[1]
         if name[0:4] == "help":
-            keyboard = help_pannel(_)
-            return await message.reply_photo(
-                photo=random.choice(START_IMAGES),
-                has_spoiler=True,
-                caption=_["help_1"].format(config.SUPPORT_CHAT),
-                reply_markup=keyboard,
+            return await send_music_widget(
+                chat_id=message.chat.id,
+                reply_to_message_id=message.id,
             )
         if name[0:3] == "sud":
             await sudoers_list(client=client, message=message, _=_)
@@ -172,58 +170,28 @@ async def start_pm(client, message: Message, _):
                 )
             return
         if name[0:3] == "inf":
-            m = await message.reply_text("🔎")
-            query = (str(name)).replace("info_", "", 1)
-            query = f"https://www.youtube.com/watch?v={query}"
-            results = VideosSearch(query, limit=1)
-            for result in (await results.next())["result"]:
-                title = result["title"]
-                duration = result["duration"]
-                views = result["viewCount"]["short"]
-                thumbnail = result["thumbnails"][0]["url"].split("?")[0]
-                channellink = result["channel"]["link"]
-                channel = result["channel"]["name"]
-                link = result["link"]
-                published = result["publishedTime"]
-            searched_text = _["start_6"].format(
-                title, duration, views, published, channellink, channel, app.mention
-            )
-            key = InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            text=_["S_B_8"],
-                            url=link,
-                            style=ButtonStyle.SUCCESS,
-                        ),
-                        InlineKeyboardButton(
-                            text=_["S_B_9"],
-                            url=config.SUPPORT_CHAT,
-                            style=ButtonStyle.SUCCESS,
-                        ),
-                    ],
-                ]
-            )
-            await m.delete()
-            await app.send_photo(
-                chat_id=message.chat.id,
-                photo=thumbnail,
-                has_spoiler=True,
-                caption=searched_text,
-                reply_markup=key,
-            )
+            video_id = str(name).replace("info_", "", 1).strip()
+            try:
+                await send_track_info_widget(
+                    chat_id=message.chat.id,
+                    video_id=video_id,
+                    reply_to_message_id=message.id,
+                )
+            except Exception as exc:
+                await message.reply_text(
+                    "Track information is unavailable right now. "
+                    f"<code>{type(exc).__name__}</code>"
+                )
             if await is_on_off(2):
                 return await app.send_message(
                     chat_id=config.LOGGER_ID,
-                    text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                    text=f"{message.from_user.mention} opened track information. "
+                         f"\n\n<b>User ID:</b> <code>{message.from_user.id}</code>",
                 )
     else:
-        out = private_panel(_)
-        await _send_start_photo_with_effect(
-            message=message,
-            photo=random.choice(START_IMAGES),
-            caption=_build_start_caption(message, _["start_2"]),
-            out=out,
+        await send_music_widget(
+            chat_id=message.chat.id,
+            reply_to_message_id=message.id,
         )
         if await is_on_off(2):
             return await app.send_message(

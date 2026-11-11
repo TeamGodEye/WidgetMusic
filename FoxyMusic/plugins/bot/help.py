@@ -5,9 +5,11 @@
 from typing import Union
 
 from pyrogram import filters, types
+from pyrogram.enums import ChatType
 from pyrogram.types import InlineKeyboardMarkup, Message
 
 from FoxyMusic import app
+from FoxyMusic.widgets import send_music_widget
 from FoxyMusic.misc import SUDOERS
 from FoxyMusic.utils import help_pannel
 from FoxyMusic.utils.database import get_lang
@@ -31,6 +33,9 @@ async def helper_private(
         chat_id = update.message.chat.id
         language = await get_lang(chat_id)
         _ = get_string(language)
+        if update.message.chat.type == ChatType.PRIVATE:
+            await send_music_widget(chat_id=chat_id)
+            return
         keyboard = help_pannel(_, True)
         await update.edit_message_text(
             _["help_1"].format(SUPPORT_CHAT), reply_markup=keyboard
@@ -40,14 +45,9 @@ async def helper_private(
             await update.delete()
         except:
             pass
-        language = await get_lang(update.chat.id)
-        _ = get_string(language)
-        keyboard = help_pannel(_)
-        await update.reply_photo(
-            photo=START_IMG_URL,
-            has_spoiler=True,
-            caption=_["help_1"].format(SUPPORT_CHAT),
-            reply_markup=keyboard,
+        await send_music_widget(
+            chat_id=update.chat.id,
+            reply_to_message_id=update.id,
         )
 
 
