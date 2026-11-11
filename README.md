@@ -33,7 +33,7 @@ Assistant account support| Optional music caching
 <br/>Code with passion. Music with love. ♡
 
 <p align="center">
-  <a href="https://heroku.com/deploy?template=https://github.com/TeamGodEye/WidgetMusic">
+  <a href="https://heroku.com/deploy?template=https://github.com/FoxyPookie/FoxyMusic">
     <img src="https://img.shields.io/badge/💗_Deploy%20to-Heroku-FF69B4?style=for-the-badge&logo=heroku&logoColor=white" alt="Deploy to Heroku"/>
   </a>
 </p>
@@ -80,3 +80,20 @@ Questions, feedback or suggestions? We'd love to hear from you.
 <sub>Where music meets community.</sub>
 
 </div>
+
+
+## Private HTML Music Widgets
+
+FoxyMusic includes a private-chat music control widget using Telegram Bot API `sendWidget`.
+
+- `/start`, `/help`, `/player`, `/music`, `/dashboard`, `/settings` and `/queue` open the private music dashboard.
+- Select a group where the bot is present and where you are the owner or an administrator with **Manage Video Chats** permission.
+- Send `/play song name` in the bot's private chat. Choose a result in the widget to queue it in the selected group.
+- The widget controls pause, resume, next, stop, shuffle, loop, autoplay and supported audio effects.
+- Group and channel interfaces continue using the existing commands and inline keyboards.
+
+Telegram widgets currently work in production only in private chats. Widgets have no keyboard or network access; song search therefore starts with the normal private `/play <query>` command, while result selection and playback controls happen in the widget.
+
+The widget query receiver uses Bot API long polling. Do not configure a webhook for the same bot token while this receiver is enabled. Deploy a single worker dyno so only one process polls widget updates.
+
+The current playback engine does not expose a per-chat volume API, so the widget intentionally does not show a non-functional volume slider.
