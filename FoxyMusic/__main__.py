@@ -94,11 +94,7 @@ async def init():
 
     await Alone.decorators()
 
-    # Telegram HTML widgets use Bot API widget_query updates, which are not
-    # currently exposed by the MTProto handler layer. Run a dedicated
-    # Bot API long-poll receiver for widget interactions.
     from FoxyMusic.widgets import start_widget_receiver, stop_widget_receiver
-
     start_widget_receiver()
 
     LOGGER("FoxyMusic").info(
